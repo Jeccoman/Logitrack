@@ -1,17 +1,48 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Truck, AlertTriangle } from 'lucide-react'
+import { useSocket } from '../hooks/useSocket'
 
-const fleetData = [
-  { id: 1, name: 'Truck 001', status: 'Active', health: 'Good', fuel: 75 },
-  { id: 2, name: 'Truck 002', status: 'Maintenance', health: 'Poor', fuel: 30 },
-  { id: 3, name: 'Truck 003', status: 'Active', health: 'Good', fuel: 90 },
-  { id: 4, name: 'Truck 004', status: 'Inactive', health: 'Fair', fuel: 50 },
-]
+interface Vehicle {
+  id: number
+  name: string
+  status: string
+  health: string
+  fuel: number
+}
 
-export default function FleetOverview() {
-  const [selectedVehicle, setSelectedVehicle] = useState(fleetData[0])
+interface FleetOverviewProps {
+  initialFleetData: Vehicle[]
+}
+
+export default function FleetOverview({ initialFleetData }: FleetOverviewProps) {
+  const [vehicles, setVehicles] = useState<Vehicle[]>(initialFleetData)
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
+
+  const socket = useSocket('http://localhost:3000')
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('fleetUpdated', (updatedVehicle: Vehicle) => {
+        setVehicles(prevVehicles => {
+          const index = prevVehicles.findIndex(v => v.id === updatedVehicle.id)
+          if (index !== -1) {
+            const newVehicles = [...prevVehicles]
+            newVehicles[index] = updatedVehicle
+            return newVehicles
+          }
+          return [...prevVehicles, updatedVehicle]
+        })
+      })
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (vehicles.length > 0 && !selectedVehicle) {
+      setSelectedVehicle(vehicles[0])
+    }
+  }, [vehicles, selectedVehicle])
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
@@ -20,11 +51,11 @@ export default function FleetOverview() {
         <div>
           <h3 className="text-lg font-medium mb-2">Vehicle List</h3>
           <ul className="space-y-2">
-            {fleetData.map(vehicle => (
+            {vehicles.map(vehicle => (
               <li
                 key={vehicle.id}
                 className={`p-2 rounded cursor-pointer ${
-                  selectedVehicle.id === vehicle.id ? 'bg-blue-100' : 'hover:bg-gray-100'
+                  selectedVehicle?.id === vehicle.id ? 'bg-blue-100' : 'hover:bg-gray-100'
                 }`}
                 onClick={() => setSelectedVehicle(vehicle)}
               >

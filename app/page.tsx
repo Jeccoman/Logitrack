@@ -17,10 +17,10 @@ export default function Dashboard() {
             <h1 className="text-3xl font-semibold text-gray-800 mb-6">Logistics Dashboard</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ShipmentMap />
-              <FleetOverview />
-              <RouteOptimization />
+              <FleetOverview initialFleetData={[]} />
+              <RouteOptimization initialStops={[]} />
               <NotificationCenter />
-              <PerformanceMetrics />
+              <PerformanceMetrics initialData={[]} />
             </div>
           </div>
         </main>

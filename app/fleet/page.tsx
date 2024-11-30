@@ -19,7 +19,7 @@ export default function FleetManagement() {
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FleetOverview />
+              <FleetOverview initialFleetData={[]} />
               <div className="bg-white rounded-lg shadow-md p-4">
                 <h2 className="text-xl font-semibold mb-4">Maintenance Schedule</h2>
                 {/* Add maintenance schedule component here */}

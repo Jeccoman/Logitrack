@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useSocket } from '../hooks/useSocket'
 
 interface Stop {
   id: number
@@ -19,17 +19,24 @@ interface Route {
   duration: string
 }
 
-const initialStops: Stop[] = [
-  { id: 1, name: 'Warehouse', address: '123 Main St, New York, NY' },
-  { id: 2, name: 'Customer A', address: '456 Elm St, Brooklyn, NY' },
-  { id: 3, name: 'Customer B', address: '789 Oak St, Queens, NY' },
-  { id: 4, name: 'Customer C', address: '321 Pine St, Bronx, NY' },
-]
+interface RouteOptimizationProps {
+  initialStops: Stop[]
+}
 
-export default function RouteOptimization() {
+export default function RouteOptimization({ initialStops }: RouteOptimizationProps) {
   const [stops, setStops] = useState<Stop[]>(initialStops)
   const [optimizedRoute, setOptimizedRoute] = useState<Route | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  const socket = useSocket('http://localhost:3000')
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('routeUpdated', (updatedRoute: Route) => {
+        setOptimizedRoute(updatedRoute)
+      })
+    }
+  }, [socket])
 
   const addStop = () => {
     const newStop: Stop = {
@@ -110,6 +117,9 @@ export default function RouteOptimization() {
       }
 
       setOptimizedRoute(optimizedRoute)
+      if (socket) {
+        socket.emit('updateRoute', optimizedRoute)
+      }
     } catch (error) {
       console.error('Error optimizing route:', error)
       alert('Failed to optimize route. Please try again.')
@@ -165,5 +175,4 @@ export default function RouteOptimization() {
     </div>
   )
 }
-
 

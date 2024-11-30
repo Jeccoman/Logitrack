@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api'
+import { useSocket } from '../hooks/useSocket'
 
 const containerStyle = {
   width: '100%',
@@ -10,15 +10,15 @@ const containerStyle = {
 }
 
 const center = {
-  lat: 40.7128,
-  lng: -74.0060
+  lat: -6.7924,
+  lng: 39.2083
 }
 
-const shipments = [
-  { id: 1, position: { lat: 40.7128, lng: -74.0060 }, status: 'In Transit' },
-  { id: 2, position: { lat: 40.7282, lng: -73.7949 }, status: 'Delivered' },
-  { id: 3, position: { lat: 40.6782, lng: -73.9442 }, status: 'Delayed' },
-]
+interface Shipment {
+  id: number
+  position: { lat: number; lng: number }
+  status: string
+}
 
 export default function ShipmentMap() {
   const { isLoaded } = useJsApiLoader({
@@ -27,10 +27,30 @@ export default function ShipmentMap() {
   })
 
   const [, setMap] = useState(null)
-  const [selectedShipment, setSelectedShipment] = useState<any|null>(null)
+  const [shipments, setShipments] = useState<Shipment[]>([])
+  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null)
 
-  const onLoad = (map:any) => {
-    const bounds = new window.google.maps.LatLngBounds()
+  const socket = useSocket('http://localhost:3000')
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('shipmentUpdated', (updatedShipment: Shipment) => {
+        setShipments(prevShipments => {
+          const index = prevShipments.findIndex(s => s.id === updatedShipment.id)
+          if (index !== -1) {
+            const newShipments = [...prevShipments]
+            newShipments[index] = updatedShipment
+            return newShipments
+          }
+          return [...prevShipments, updatedShipment]
+        })
+      })
+    }
+  }, [socket])
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onLoad = (map: any) => {
+    const bounds = new window.google.maps.LatLngBounds(center)
     shipments.forEach(({ position }) => bounds.extend(position))
     map.fitBounds(bounds)
     setMap(map)
@@ -42,7 +62,7 @@ export default function ShipmentMap() {
 
   return isLoaded ? (
     <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-xl font-semibold mb-4">Real-Time Shipment Tracking</h2>
+      <h2 className="text-xl font-semibold mb-4">Real-Time Shipment Tracking - Dar es Salaam</h2>
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={center}
@@ -50,8 +70,7 @@ export default function ShipmentMap() {
         onLoad={onLoad}
         onUnmount={onUnmount}
       >
-        {shipments?.map((shipment) => (
-            
+        {shipments.map((shipment) => (
           <Marker
             key={shipment.id}
             position={shipment.position}
@@ -62,7 +81,6 @@ export default function ShipmentMap() {
               scaledSize: new window.google.maps.Size(15, 15)
             }}
           />
-          
         ))}
 
         {selectedShipment && (
@@ -80,4 +98,5 @@ export default function ShipmentMap() {
     </div>
   ) : <></>
 }
+
 

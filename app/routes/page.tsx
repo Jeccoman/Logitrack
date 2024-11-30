@@ -12,7 +12,7 @@ export default function RouteOptimizationPage() {
           <div className="container mx-auto px-6 py-8">
             <h1 className="text-3xl font-semibold text-gray-800 mb-6">Route Optimization</h1>
             <div className="grid grid-cols-1 gap-6">
-              <RouteOptimization />
+              <RouteOptimization initialStops={[]} />
             </div>
           </div>
         </main>
